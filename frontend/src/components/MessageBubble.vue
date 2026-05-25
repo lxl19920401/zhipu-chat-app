@@ -91,6 +91,9 @@ async function copyContent() {
   line-height: 1.7;
   font-size: 14px;
   word-break: break-word;
+  overflow-wrap: break-word;
+  min-width: 0;
+  max-width: 100%;
   position: relative;
 }
 
@@ -109,6 +112,11 @@ async function copyContent() {
 
 .user-content {
   white-space: pre-wrap;
+}
+
+.markdown-body {
+  min-width: 0;
+  overflow-wrap: break-word;
 }
 
 .bubble-actions {
@@ -181,8 +189,14 @@ async function copyContent() {
   padding: 16px;
   margin: 10px 0;
   overflow-x: auto;
+  max-width: 100%;
   font-size: 13px;
   line-height: 1.5;
+}
+
+.markdown-body :deep(pre code) {
+  word-break: normal;
+  white-space: pre;
 }
 
 .markdown-body :deep(pre code) {
@@ -201,6 +215,12 @@ async function copyContent() {
   border-radius: 0 var(--radius-sm) var(--radius-sm) 0;
 }
 
+.markdown-body :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
 .markdown-body :deep(a) {
   color: var(--accent);
   text-decoration: none;
@@ -215,6 +235,9 @@ async function copyContent() {
   margin: 8px 0;
   font-size: 13px;
   width: 100%;
+  display: block;
+  overflow-x: auto;
+  max-width: 100%;
 }
 
 .markdown-body :deep(th),
