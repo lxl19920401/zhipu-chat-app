@@ -81,7 +81,7 @@ function send() {
 .input-wrapper {
   display: flex;
   gap: 8px;
-  align-items: flex-end;
+  align-items: center;
   background: var(--bg-surface);
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -164,6 +164,9 @@ function send() {
 @media (max-width: 767px) {
   .input-area {
     padding: 8px 12px 12px;
+  }
+  .input {
+    font-size: 16px;
   }
 }
 </style>

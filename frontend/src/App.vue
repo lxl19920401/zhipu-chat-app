@@ -209,29 +209,25 @@ async function handleSend(text) {
   isLoading.value = true;
   scrollToBottom();
 
-  const aiMsg = { role: 'assistant', content: '' };
-  messages.value.push(aiMsg);
-  scrollToBottom();
-
   const apiMessages = [
     { role: 'system', content: '你是一个AI助手，请用Markdown格式回答用户的问题。使用合适的标题、列表、代码块、表格等格式让回答更清晰易读。' },
     ...messages.value
-      .filter((m) => m !== aiMsg && m.role !== 'system')
+      .filter((m) => m.role !== 'system')
       .map((m) => ({ role: m.role, content: m.content })),
   ];
 
-  try {
-    const result = await sendMessage(apiMessages);
-    if (result.success) {
-      aiMsg.content = result.message;
-    } else {
-      aiMsg.content = '抱歉，出错了：' + (result.error || '请求失败');
+  const content = await (async () => {
+    try {
+      const result = await sendMessage(apiMessages);
+      if (result.success) return result.message;
+      return '抱歉，出错了：' + (result.error || '请求失败');
+    } catch (err) {
+      return '抱歉，出错了：' + err.message;
     }
-  } catch (err) {
-    aiMsg.content = '抱歉，出错了：' + err.message;
-  }
+  })();
 
   isLoading.value = false;
+  messages.value.push({ role: 'assistant', content });
   scrollToBottom();
 
   saveCurrentSession();
@@ -313,12 +309,13 @@ body {
   flex-direction: column;
   height: 100vh;
   min-width: 0;
+  background: #fff;
 }
 
 .header {
   flex-shrink: 0;
   padding: 0 20px;
-  background: var(--bg-card);
+  background: #fff;
   border-bottom: 1px solid var(--border);
 }
 
@@ -557,7 +554,7 @@ body {
     padding: 7px 9px;
   }
 
-  .chat-scroll { padding: 16px 12px 4px; }
+  .chat-scroll { padding: 16px 10px 4px; }
 
   .welcome { min-height: calc(100vh - 140px); padding: 24px 12px; }
   .welcome-title { font-size: 20px; }

@@ -47,7 +47,7 @@ async function copyContent() {
 <style scoped>
 .message-wrapper {
   display: flex;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   animation: messageIn 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
@@ -57,6 +57,10 @@ async function copyContent() {
   display: flex;
   gap: 10px;
   max-width: 80%;
+}
+
+.assistant .message {
+  max-width: 82%;
 }
 
 .message-wrapper.user .message {
@@ -98,8 +102,8 @@ async function copyContent() {
 }
 
 .user .bubble {
-  background: var(--text-primary);
-  color: #faf8f4;
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: #fff;
   border-bottom-right-radius: 4px;
 }
 
@@ -197,9 +201,6 @@ async function copyContent() {
 .markdown-body :deep(pre code) {
   word-break: normal;
   white-space: pre;
-}
-
-.markdown-body :deep(pre code) {
   background: none;
   padding: 0;
   font-size: inherit;
@@ -272,7 +273,44 @@ async function copyContent() {
 }
 
 @media (max-width: 767px) {
-  .message { max-width: 88%; }
-  .bubble { padding: 10px 14px; font-size: 14px; }
+  .message {
+    max-width: 100%;
+  }
+
+  .assistant .message {
+    max-width: 100%;
+  }
+
+  .avatar {
+    display: none;
+  }
+
+  .user .bubble {
+    background: #edf3fe;
+    color: var(--text-primary);
+    border-radius: 10px;
+  }
+
+  .assistant .bubble {
+    background: rgb(247, 247, 247);
+    color: var(--text-primary);
+    border-radius: 12px;
+    border-bottom-left-radius: 12px;
+    box-shadow: none;
+  }
+
+  .assistant .bubble :deep(pre) {
+    background: #1e1e1e;
+    color: #d4d4d4;
+    border-radius: 8px;
+  }
+
+  .assistant .bubble :deep(pre code) {
+    color: #d4d4d4;
+  }
+
+  .bubble-actions {
+    opacity: 1;
+  }
 }
 </style>
