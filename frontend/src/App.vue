@@ -93,7 +93,6 @@
       <ChatInput
         :disabled="isLoading"
         @send="handleSend"
-        @stop="handleStop"
       />
     </div>
   </div>
@@ -104,7 +103,7 @@ import { ref, computed, nextTick, watch, onMounted } from 'vue';
 import MessageBubble from './components/MessageBubble.vue';
 import ChatInput from './components/ChatInput.vue';
 import SessionSidebar from './components/SessionSidebar.vue';
-import { sendMessageStream } from './api/chat.js';
+import { sendMessage } from './api/chat.js';
 
 const STORAGE_KEY = 'zhipu-sessions';
 
@@ -114,7 +113,6 @@ const chatRef = ref(null);
 const sidebarVisible = ref(false);
 const currentSessionId = ref('');
 const sessions = ref({});
-let abortController = null;
 
 const sessionList = computed(() => {
   return Object.values(sessions.value).sort((a, b) => b.updatedAt - a.updatedAt);
@@ -204,50 +202,35 @@ function suggestClick(text) {
   handleSend(text);
 }
 
-function handleSend(text) {
+async function handleSend(text) {
   ensureCurrentSession();
 
   messages.value.push({ role: 'user', content: text });
   isLoading.value = true;
   scrollToBottom();
 
-  const aiMsg = { role: 'assistant', content: '' };
-  messages.value.push(aiMsg);
-  scrollToBottom();
-
   const apiMessages = [
     { role: 'system', content: '你是一个AI助手，请用Markdown格式回答用户的问题。使用合适的标题、列表、代码块、表格等格式让回答更清晰易读。' },
     ...messages.value
-      .filter((m) => m !== aiMsg && m.role !== 'system')
+      .filter((m) => m.role !== 'system')
       .map((m) => ({ role: m.role, content: m.content })),
   ];
 
-  abortController = sendMessageStream(apiMessages, {
-    onChunk(chunk) {
-      aiMsg.content += chunk;
-      scrollToBottom();
-    },
-    onDone() {
-      abortController = null;
-      isLoading.value = false;
-      scrollToBottom();
-      saveCurrentSession();
-    },
-    onError(err) {
-      aiMsg.content = '抱歉，出错了：' + err;
-      abortController = null;
-      isLoading.value = false;
-      saveCurrentSession();
-    },
-  });
-}
+  const content = await (async () => {
+    try {
+      const result = await sendMessage(apiMessages);
+      if (result.success) return result.message;
+      return '抱歉，出错了：' + (result.error || '请求失败');
+    } catch (err) {
+      return '抱歉，出错了：' + err.message;
+    }
+  })();
 
-function handleStop() {
-  if (abortController) {
-    abortController.abort();
-    abortController = null;
-  }
   isLoading.value = false;
+  messages.value.push({ role: 'assistant', content });
+  scrollToBottom();
+
+  saveCurrentSession();
 }
 
 function saveCurrentSession() {

@@ -1,11 +1,10 @@
 const BASE = '/api';
 
-export async function sendMessage(messages, { signal } = {}) {
+export async function sendMessage(messages) {
   const res = await fetch(BASE + '/chat', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ messages }),
-    signal,
   });
   return res.json();
 }
