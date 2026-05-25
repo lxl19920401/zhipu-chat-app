@@ -1,5 +1,14 @@
 <template>
-  <div class="app-layout">
+  <div class="app-shell">
+    <SessionSidebar
+      persistent
+      :sessions="sessionList"
+      :current-id="currentSessionId"
+      @switch="switchSession"
+      @delete="deleteSession"
+      @new="newChat"
+    />
+
     <SessionSidebar
       :visible="sidebarVisible"
       :sessions="sessionList"
@@ -7,40 +16,75 @@
       @close="sidebarVisible = false"
       @switch="switchSession"
       @delete="deleteSession"
+      @new="newChat"
     />
 
     <div class="app">
       <header class="header">
         <div class="header-inner">
-          <button class="menu-btn" @click="sidebarVisible = true">☰</button>
-          <h1 class="title">🤖 AI 智能助手</h1>
-          <div class="header-actions">
-            <button class="header-btn" @click="newChat" title="新对话">✨ 新对话</button>
-          </div>
+          <button class="menu-btn" @click="sidebarVisible = true" aria-label="菜单">
+            <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
+              <rect x="3" y="5" width="14" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="3" y="9.25" width="14" height="1.5" rx="0.75" fill="currentColor"/>
+              <rect x="3" y="13.5" width="14" height="1.5" rx="0.75" fill="currentColor"/>
+            </svg>
+          </button>
+          <h1 class="title">
+            <span class="title-icon">✦</span>
+            AI 智能助手
+          </h1>
+          <button class="header-btn" @click="newChat" title="新对话">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+              <path d="M8 3v10M3 8h10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            新对话
+          </button>
         </div>
       </header>
 
       <main class="chat-area" ref="chatRef">
-        <div v-if="messages.length === 0" class="welcome">
-          <div class="welcome-icon">🤖</div>
-          <h2>你好！我是 AI 助手</h2>
-          <p>由智谱 GLM-4.7-Flash 驱动，完全免费使用</p>
-          <p class="hint">输入问题开始对话吧</p>
-        </div>
+        <div class="chat-scroll">
+          <div v-if="messages.length === 0" class="welcome">
+            <div class="welcome-graphic">
+              <div class="welcome-ring"></div>
+              <span class="welcome-icon">✦</span>
+            </div>
+            <h2 class="welcome-title">开始对话</h2>
+            <p class="welcome-desc">由智谱 GLM-4.7-Flash 驱动，完全免费</p>
+            <div class="welcome-suggestions">
+              <button class="suggestion-btn" @click="suggestClick('用 Python 写一个快速排序')">
+                <span class="suggestion-icon">⌨️</span>
+                写一段代码
+              </button>
+              <button class="suggestion-btn" @click="suggestClick('解释什么是RESTful API')">
+                <span class="suggestion-icon">📖</span>
+                解释概念
+              </button>
+              <button class="suggestion-btn" @click="suggestClick('帮我润色这段话：')">
+                <span class="suggestion-icon">✏️</span>
+                润色文本
+              </button>
+              <button class="suggestion-btn" @click="suggestClick('给我一些学习前端的建议')">
+                <span class="suggestion-icon">💡</span>
+                学习建议
+              </button>
+            </div>
+          </div>
 
-        <div class="messages">
-          <MessageBubble
-            v-for="(msg, i) in messages"
-            :key="i"
-            :role="msg.role"
-            :content="msg.content"
-          />
+          <div class="messages" v-else>
+            <MessageBubble
+              v-for="(msg, i) in messages"
+              :key="i"
+              :role="msg.role"
+              :content="msg.content"
+            />
 
-          <div v-if="isLoading" class="thinking-indicator">
-            <div class="thinking-bubble">
-              <span class="dot"></span>
-              <span class="dot"></span>
-              <span class="dot"></span>
+            <div v-if="isLoading" class="thinking">
+              <div class="thinking-bubble">
+                <span class="dot"></span>
+                <span class="dot"></span>
+                <span class="dot"></span>
+              </div>
             </div>
           </div>
         </div>
@@ -153,6 +197,11 @@ function scrollToBottom() {
 
 watch(() => messages.value.length, () => scrollToBottom());
 
+function suggestClick(text) {
+  ensureCurrentSession();
+  handleSend(text);
+}
+
 async function handleSend(text) {
   ensureCurrentSession();
 
@@ -210,6 +259,28 @@ onMounted(() => {
 </script>
 
 <style>
+:root {
+  --bg-page: #f2ede4;
+  --bg-surface: #faf8f4;
+  --bg-sidebar: #e8e1d7;
+  --bg-card: #faf8f4;
+  --text-primary: #2c2924;
+  --text-secondary: #7a7267;
+  --text-muted: #9a9388;
+  --accent: #c97d60;
+  --accent-hover: #b86a4e;
+  --accent-soft: #e8d5cc;
+  --sage: #7a8b75;
+  --border: #e5ddd4;
+  --shadow-sm: 0 1px 3px rgba(44, 41, 36, 0.06);
+  --shadow-md: 0 4px 16px rgba(44, 41, 36, 0.08);
+  --shadow-lg: 0 8px 32px rgba(44, 41, 36, 0.1);
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 18px;
+  --font-ui: 'Sora', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -217,11 +288,12 @@ onMounted(() => {
 }
 
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-  background: #f5f7fb;
-  color: #333;
+  font-family: var(--font-ui);
+  background: var(--bg-page);
+  color: var(--text-primary);
   height: 100vh;
   overflow: hidden;
+  -webkit-font-smoothing: antialiased;
 }
 
 #app {
@@ -230,152 +302,214 @@ body {
   flex-direction: column;
 }
 
-.app-layout {
+.app-shell {
   height: 100vh;
   display: flex;
-  justify-content: center;
 }
 
 .app {
-  height: 100vh;
+  flex: 1;
   display: flex;
   flex-direction: column;
-  max-width: 860px;
-  width: 100%;
-  background: #fff;
-  box-shadow: 0 0 40px rgba(0, 0, 0, 0.06);
+  height: 100vh;
+  min-width: 0;
 }
 
 .header {
-  background: #fff;
-  border-bottom: 1px solid #e8e8e8;
-  padding: 0 16px;
   flex-shrink: 0;
+  padding: 0 20px;
+  background: var(--bg-card);
+  border-bottom: 1px solid var(--border);
 }
 
 .header-inner {
   display: flex;
   align-items: center;
-  height: 56px;
+  height: 60px;
   gap: 12px;
   max-width: 800px;
   margin: 0 auto;
 }
 
 .menu-btn {
+  display: none;
   background: none;
   border: none;
-  font-size: 20px;
   cursor: pointer;
-  padding: 4px 8px;
+  padding: 6px;
   border-radius: 6px;
-  color: #666;
+  color: var(--text-secondary);
   transition: background 0.15s;
 }
+
 .menu-btn:hover {
-  background: #f0f0f0;
+  background: rgba(44, 41, 36, 0.06);
 }
 
 .title {
   font-size: 16px;
   font-weight: 600;
   flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.header-actions {
-  flex-shrink: 0;
+.title-icon {
+  color: var(--accent);
+  font-size: 18px;
 }
 
 .header-btn {
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 7px 14px;
   font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  color: var(--text-secondary);
   cursor: pointer;
-  transition: opacity 0.2s;
+  transition: all 0.2s;
 }
 
 .header-btn:hover {
-  opacity: 0.9;
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(201, 125, 96, 0.06);
 }
 
 .chat-area {
   flex: 1;
   overflow-y: auto;
-  padding: 20px 16px 8px;
   scroll-behavior: smooth;
 }
 
-.chat-area::-webkit-scrollbar {
-  width: 6px;
-}
+.chat-area::-webkit-scrollbar { width: 6px; }
+.chat-area::-webkit-scrollbar-track { background: transparent; }
+.chat-area::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
 
-.chat-area::-webkit-scrollbar-track {
-  background: transparent;
-}
-
-.chat-area::-webkit-scrollbar-thumb {
-  background: #ddd;
-  border-radius: 3px;
+.chat-scroll {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 24px 20px 8px;
 }
 
 .messages {
-  max-width: 800px;
-  margin: 0 auto;
+  /* container for message list */
 }
 
+/* Welcome */
+
 .welcome {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: calc(100vh - 180px);
   text-align: center;
-  padding: 60px 20px;
-  color: #888;
+  padding: 40px 20px;
+}
+
+.welcome-graphic {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+}
+
+.welcome-ring {
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 2px solid var(--border);
+  animation: ringPulse 3s ease-in-out infinite;
 }
 
 .welcome-icon {
-  font-size: 48px;
-  margin-bottom: 16px;
+  font-size: 32px;
+  color: var(--accent);
+  animation: iconFloat 3s ease-in-out infinite;
 }
 
-.welcome h2 {
+.welcome-title {
   font-size: 22px;
-  color: #333;
+  font-weight: 600;
   margin-bottom: 8px;
+  color: var(--text-primary);
 }
 
-.welcome p {
+.welcome-desc {
   font-size: 14px;
-  line-height: 1.8;
+  color: var(--text-muted);
+  margin-bottom: 32px;
 }
 
-.welcome .hint {
-  margin-top: 12px;
-  color: #aaa;
+.welcome-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  max-width: 480px;
+}
+
+.suggestion-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 18px;
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  background: var(--bg-surface);
+  color: var(--text-secondary);
   font-size: 13px;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
 }
 
-.thinking-indicator {
+.suggestion-btn:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: rgba(201, 125, 96, 0.06);
+  transform: translateY(-1px);
+}
+
+.suggestion-icon {
+  font-size: 16px;
+}
+
+/* Thinking indicator */
+
+.thinking {
   display: flex;
   justify-content: flex-start;
-  padding: 0 42px;
-  margin-bottom: 16px;
-  animation: fadeIn 0.3s ease;
+  margin-bottom: 20px;
+  animation: messageIn 0.3s ease;
 }
 
 .thinking-bubble {
-  background: #f0f0f0;
-  border-radius: 14px;
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
   border-bottom-left-radius: 4px;
-  padding: 14px 18px;
+  padding: 16px 20px;
   display: flex;
-  gap: 4px;
+  gap: 5px;
+  box-shadow: var(--shadow-sm);
 }
 
 .dot {
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: #999;
+  background: var(--text-muted);
   animation: bounce 1.4s infinite ease-in-out both;
 }
 
@@ -388,23 +522,46 @@ body {
   40% { transform: scale(1); }
 }
 
-@keyframes fadeIn {
+@keyframes messageIn {
   from { opacity: 0; transform: translateY(8px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@media (max-width: 600px) {
-  .app {
-    box-shadow: none;
+@keyframes ringPulse {
+  0%, 100% { transform: scale(1); opacity: 0.4; }
+  50% { transform: scale(1.15); opacity: 0.7; }
+}
+
+@keyframes iconFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+
+/* Desktop */
+@media (min-width: 768px) {
+  .menu-btn { display: none; }
+}
+
+/* Mobile */
+@media (max-width: 767px) {
+  .menu-btn { display: flex; }
+
+  .header { padding: 0 12px; }
+  .header-inner { height: 56px; }
+
+  .title { font-size: 15px; }
+  .title-icon { display: none; }
+
+  .header-btn span { display: none; }
+  .header-btn {
+    padding: 7px 9px;
   }
-  .message {
-    max-width: 90% !important;
-  }
-  .chat-area {
-    padding: 16px 10px 4px;
-  }
-  .input-area {
-    padding: 8px 10px;
-  }
+
+  .chat-scroll { padding: 16px 12px 4px; }
+
+  .welcome { min-height: calc(100vh - 140px); padding: 24px 12px; }
+  .welcome-title { font-size: 20px; }
+  .welcome-suggestions { gap: 8px; }
+  .suggestion-btn { padding: 8px 14px; font-size: 12px; }
 }
 </style>
