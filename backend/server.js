@@ -163,6 +163,14 @@ app.post('/api/chat/stream', async (req, res) => {
   }
 });
 
+if (process.env.NODE_ENV === 'production') {
+  const distPath = path.join(__dirname, '../frontend/dist');
+  app.use('/chat', express.static(distPath));
+  app.get('/chat/*', (req, res) => {
+    res.sendFile('index.html', { root: distPath });
+  });
+}
+
 app.listen(PORT, () => {
   console.log('Backend running on http://localhost:' + PORT);
 });
